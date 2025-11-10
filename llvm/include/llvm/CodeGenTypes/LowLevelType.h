@@ -367,14 +367,16 @@ public:
   /// but the new element size. Otherwise, return the new element type. Invalid
   /// for pointer types. For pointer types, use changeElementType.
   constexpr LLT changeElementSize(unsigned NewEltSize) const {
-    assert(!isPointerOrPointerVector() && !(isFloat() || isFloatVector()) &&
+    assert(!isPointerOrPointerVector() &&
            "invalid to directly change element size for pointers");
     return isVector()
                ? LLT::vector(getElementCount(), getElementType().isInteger()
                                                     ? LLT::integer(NewEltSize)
-                                                    : LLT::scalar(NewEltSize))
+                                                    : getElementType().isFloat() ? LLT::floatingPoint(NewEltSize, getElementType().getFPVariant())
+                                                                : LLT::scalar(NewEltSize))
            : isInteger() ? LLT::integer(NewEltSize)
-                         : LLT::scalar(NewEltSize);
+           : isFloat() ? LLT::floatingPoint(NewEltSize, getFPVariant())
+                       : LLT::scalar(NewEltSize);
   }
 
   /// Return a vector or scalar with the same element type and the new element
