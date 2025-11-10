@@ -1084,7 +1084,7 @@ public:
           const LLT VecTy = Query.Types[TypeIdx];
           unsigned NumElts = VecTy.getNumElements();
           unsigned MinSize = VectorSize / NumElts;
-          LLT NewTy = LLT::fixed_vector(NumElts, LLT::scalar(MinSize));
+          LLT NewTy = LLT::fixed_vector(NumElts, VecTy.getElementType().changeElementSize(MinSize));
           return std::make_pair(TypeIdx, NewTy);
         });
   }
@@ -1095,7 +1095,7 @@ public:
     using namespace LegalizeMutations;
     return actionIf(LegalizeAction::WidenScalar,
                     scalarNarrowerThan(TypeIdx, Ty.getSizeInBits()),
-                    changeTo(typeIdx(TypeIdx), Ty));
+                    changeTo(typeIdx(TypeIdx), Ty.changeElementSize(Ty.getSizeInBits())));
   }
   LegalizeRuleSet &minScalar(bool Pred, unsigned TypeIdx, const LLT Ty) {
     if (!Pred)
@@ -1219,7 +1219,7 @@ public:
         [=](const LegalityQuery &Query) {
           LLT T = Query.Types[LargeTypeIdx];
           if (T.isPointerVector())
-            T = T.changeElementType(LLT::scalar(T.getScalarSizeInBits()));
+            T = T.changeElementType(Query.Types[TypeIdx].changeElementSize(T.getScalarSizeInBits()));
           return std::make_pair(TypeIdx, T);
         });
   }
