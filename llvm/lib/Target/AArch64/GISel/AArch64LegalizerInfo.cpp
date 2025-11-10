@@ -118,6 +118,8 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
       .legalFor({p0, s8, s16, s32, s64})
       .legalFor({v2s8, v4s8, v8s8, v16s8, v2s16, v4s16, v8s16, v2s32, v4s32,
                  v2s64, v2p0})
+      .legalFor(HasBF16, {bf16})
+      .legalFor(HasBF16, {v4bf16})
       .widenScalarToNextPow2(0)
       .clampScalar(0, s8, s64)
       .moreElementsToNextPow2(0)
@@ -702,7 +704,7 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
       .clampScalar(0, s8, s64);
   getActionDefinitionsBuilder(G_FCONSTANT)
       // Always legalize s16 to prevent G_FCONSTANT being widened to G_CONSTANT
-      .legalFor({s16, s32, s64, s128})
+      .legalFor({s16, s32, s64, s128, bf16, fp16, fp32, fp64, fp128})
       .clampScalar(0, MinFPScalar, s128);
 
   // FIXME: fix moreElementsToNextPow2
@@ -1146,6 +1148,7 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
                          {s16, nxv8s16, s64},
                          {s32, nxv4s32, s64},
                          {s64, nxv2s64, s64}})
+      .legalFor(HasBF16, {{bf16, v8bf16, s64}, {bf16, v4bf16, s64}})
       .unsupportedIf([=](const LegalityQuery &Query) {
         const LLT &EltTy = Query.Types[1].getElementType();
         if (Query.Types[1].isScalableVector())
@@ -1197,6 +1200,7 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
   getActionDefinitionsBuilder(G_INSERT_VECTOR_ELT)
       .legalIf(
           typeInSet(0, {v8s8, v16s8, v4s16, v8s16, v2s32, v4s32, v2s64, v2p0}))
+      .legalFor(HasBF16, {{v4bf16}, {v8bf16}})
       .legalFor(HasSVE, {{nxv16s8, s32, s64},
                          {nxv8s16, s32, s64},
                          {nxv4s32, s32, s64},
@@ -1219,6 +1223,8 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
                  {v4s32, s32},
                  {v2s64, s64},
                  {v2p0, p0}})
+      .legalFor(HasBF16, {{v4bf16, bf16},
+                 {v8bf16, bf16}})
       .clampNumElements(0, v4s32, v4s32)
       .clampNumElements(0, v2s64, v2s64)
       .minScalarOrElt(0, s8)
@@ -1266,6 +1272,8 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
 
   getActionDefinitionsBuilder(G_CONCAT_VECTORS)
       .legalFor({{v16s8, v8s8}, {v8s16, v4s16}, {v4s32, v2s32}})
+      .legalFor({{v16fp8, v8fp8}, {v8fp16, v4fp16}, {v4fp32, v2fp32}})
+      .legalFor(HasBF16, {{v8bf16, v4bf16}})
       .bitcastIf(
           [=](const LegalityQuery &Query) {
             return Query.Types[0].getSizeInBits() <= 128 &&
