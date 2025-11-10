@@ -64,6 +64,26 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
   const LLT nxv4s32 = LLT::scalable_vector(4, s32);
   const LLT nxv2s64 = LLT::scalable_vector(2, s64);
 
+  const LLT bf16 = LLT::bfloat16();
+  const LLT v2bf16 = LLT::fixed_vector(2, bf16);
+  const LLT v4bf16 = LLT::fixed_vector(4, bf16);
+  const LLT v8bf16 = LLT::fixed_vector(8, bf16);
+
+  const LLT fp8 = LLT::floatingPoint(8, LLT::FPVariant::IEEE_FLOAT);
+  const LLT v8fp8 = LLT::fixed_vector(8, fp8);
+  const LLT v16fp8 = LLT::fixed_vector(16, fp8);
+
+  const LLT fp16 = LLT::float16();
+  const LLT v4fp16 = LLT::fixed_vector(4, fp16);
+  const LLT v8fp16 = LLT::fixed_vector(8, fp16);
+
+  const LLT fp32 = LLT::float32();
+  const LLT v2fp32 = LLT::fixed_vector(2, fp32);
+  const LLT v4fp32 = LLT::fixed_vector(4, fp32);
+
+  const LLT fp64 = LLT::float64();
+  const LLT fp128 = LLT::float128();
+
   std::initializer_list<LLT> PackedVectorAllTypeList = {/* Begin 128bit types */
                                                         v16s8, v8s16, v4s32,
                                                         v2s64, v2p0,
@@ -86,6 +106,8 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
   // support.
   const bool HasFP16 = ST.hasFullFP16();
   const LLT &MinFPScalar = HasFP16 ? s16 : s32;
+
+  const bool HasBF16 = ST.hasBF16();
 
   const bool HasCSSC = ST.hasCSSC();
   const bool HasRCPC3 = ST.hasRCPC3();
@@ -816,6 +838,7 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
   getActionDefinitionsBuilder(G_FPTRUNC)
       .legalFor(
           {{s16, s32}, {s16, s64}, {s32, s64}, {v4s16, v4s32}, {v2s32, v2s64}})
+      .legalFor(HasBF16, {{bf16, fp32}, {bf16, fp64}, {v4bf16, v4fp32}})
       .libcallFor({{s16, s128}, {s32, s128}, {s64, s128}})
       .clampNumElements(0, v4s16, v4s16)
       .clampNumElements(0, v2s32, v2s32)
@@ -824,6 +847,7 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
   getActionDefinitionsBuilder(G_FPEXT)
       .legalFor(
           {{s32, s16}, {s64, s16}, {s64, s32}, {v4s32, v4s16}, {v2s64, v2s32}})
+      .legalFor(HasBF16, {{fp32, bf16}, {v4fp32, v4bf16}})
       .libcallFor({{s128, s64}, {s128, s32}, {s128, s16}})
       .moreElementsToNextPow2(0)
       .widenScalarIf(
@@ -837,6 +861,8 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
           changeElementTo(1, s32))
       .clampNumElements(0, v4s32, v4s32)
       .clampNumElements(0, v2s64, v2s64)
+      // bf16 -> fp32 -> fp64
+      .convertBF16(HasBF16, 1)
       .scalarize(0);
 
   // Conversions
