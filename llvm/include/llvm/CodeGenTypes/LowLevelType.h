@@ -331,7 +331,7 @@ public:
 
   /// Returns the total size of the type. Must only be called on sized types.
   constexpr TypeSize getSizeInBits() const {
-    if (isPointer() || isScalar())
+    if (!isVector())
       return TypeSize::getFixed(getScalarSizeInBits());
     auto EC = getElementCount();
     return TypeSize(getScalarSizeInBits() * EC.getKnownMinValue(),
@@ -467,9 +467,10 @@ public:
 #endif
 
   constexpr bool operator==(const LLT &RHS) const {
-    if (isAnyScalar() || RHS.isAnyScalar())
+    if (isAnyScalar() || RHS.isAnyScalar()) {
       return isScalar() == RHS.isScalar() &&
-             getScalarSizeInBits() == RHS.getScalarSizeInBits();
+             getSizeInBits() == RHS.getSizeInBits();
+    }
 
     if (isVector() && RHS.isVector())
       return getElementType() == RHS.getElementType() &&
