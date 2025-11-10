@@ -105,7 +105,7 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
   // Some instructions only support s16 if the subtarget has full 16-bit FP
   // support.
   const bool HasFP16 = ST.hasFullFP16();
-  const LLT &MinFPScalar = HasFP16 ? s16 : s32;
+  const LLT &MinFPScalar = HasFP16 ? fp16 : fp32;
 
   const bool HasBF16 = ST.hasBF16();
 
@@ -426,8 +426,9 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
       {G_FADD, G_FSUB, G_FMUL, G_FDIV, G_FMA, G_FSQRT, G_FMAXNUM, G_FMINNUM,
        G_FMAXIMUM, G_FMINIMUM, G_FCEIL, G_FFLOOR, G_FRINT, G_FNEARBYINT,
        G_INTRINSIC_TRUNC, G_INTRINSIC_ROUND, G_INTRINSIC_ROUNDEVEN})
-      .legalFor({s32, s64, v2s32, v4s32, v2s64})
-      .legalFor(HasFP16, {s16, v4s16, v8s16})
+      .legalFor({fp32, fp64, fp128, s32, s64, v2s32, v4s32, v2s64})
+      .legalFor(HasFP16, {fp16, s16, v4s16, v8s16})
+      .convertBF16(HasBF16)
       .libcallFor({s128})
       .scalarizeIf(scalarOrEltWiderThan(0, 64), 0)
       .minScalarOrElt(0, MinFPScalar)
