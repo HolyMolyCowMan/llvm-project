@@ -75,10 +75,12 @@ static void applyStackPassedSmallTypeDAGHack(EVT OrigVT, MVT &ValVT,
 }
 
 // Account for i1/i8/i16 stack passed value hack
-static LLT getStackValueStoreTypeHack(const CCValAssign &VA) {
+static LLT getStackValueStoreTypeHack(const CCValAssign &VA,
+                                      bool AllowExtendedLLT) {
   const MVT ValVT = VA.getValVT();
-  return (ValVT == MVT::i8 || ValVT == MVT::i16) ? LLT(ValVT)
-                                                 : LLT(VA.getLocVT());
+  return (ValVT == MVT::i8 || ValVT == MVT::i16)
+             ? LLT(ValVT, AllowExtendedLLT)
+             : LLT(VA.getLocVT(), AllowExtendedLLT);
 }
 
 namespace {
@@ -162,7 +164,9 @@ struct IncomingArgHandler : public CallLowering::IncomingValueHandler {
     // CCValAssign.
     if (Flags.isPointer())
       return CallLowering::ValueHandler::getStackValueStoreType(DL, VA, Flags);
-    return getStackValueStoreTypeHack(VA);
+    const bool AllowExtendedLLT =
+        MIRBuilder.getMF().getTarget().Options.EnableGlobalISelExtendedLLT;
+    return getStackValueStoreTypeHack(VA, AllowExtendedLLT);
   }
 
   void assignValueToReg(Register ValVReg, Register PhysReg,
@@ -176,8 +180,8 @@ struct IncomingArgHandler : public CallLowering::IncomingValueHandler {
                             const CCValAssign &VA) override {
     MachineFunction &MF = MIRBuilder.getMF();
 
-    LLT ValTy(VA.getValVT());
-    LLT LocTy(VA.getLocVT());
+    LLT ValTy(VA.getValVT(), MF.getTarget().Options.EnableGlobalISelExtendedLLT);
+    LLT LocTy(VA.getLocVT(), MF.getTarget().Options.EnableGlobalISelExtendedLLT);
 
     // Fixup the types for the DAG compatibility hack.
     if (VA.getValVT() == MVT::i8 || VA.getValVT() == MVT::i16)
@@ -288,9 +292,10 @@ struct OutgoingArgHandler : public CallLowering::OutgoingValueHandler {
                              ISD::ArgFlagsTy Flags) const override {
     if (Flags.isPointer())
       return CallLowering::ValueHandler::getStackValueStoreType(DL, VA, Flags);
-    return getStackValueStoreTypeHack(VA);
+    const bool AllowExtendedLLT =
+        MIRBuilder.getMF().getTarget().Options.EnableGlobalISelExtendedLLT;
+    return getStackValueStoreTypeHack(VA, AllowExtendedLLT);
   }
-
   void assignValueToReg(Register ValVReg, Register PhysReg,
                         const CCValAssign &VA) override {
     MIB.addUse(PhysReg, RegState::Implicit);
@@ -371,7 +376,7 @@ struct OutgoingArgHandler : public CallLowering::OutgoingValueHandler {
 
       if (VA.getValVT() == MVT::i8 || VA.getValVT() == MVT::i16) {
         std::swap(ValVT, LocVT);
-        MemTy = LLT(VA.getValVT());
+        MemTy = LLT(VA.getValVT(), MIRBuilder.getMF().getTarget().Options.EnableGlobalISelExtendedLLT);
       }
 
       ValVReg = extendRegister(ValVReg, VA, MaxSize);
@@ -456,7 +461,7 @@ bool AArch64CallLowering::lowerReturn(MachineIRBuilder &MIRBuilder,
           else if (F.getAttributes().hasRetAttr(Attribute::ZExt))
             ExtendOp = TargetOpcode::G_ZEXT;
 
-          LLT NewLLT(NewVT);
+          LLT NewLLT(NewVT, MF.getTarget().Options.EnableGlobalISelExtendedLLT);
           LLT OldLLT = TLI.getLLTForType(*CurArgInfo.Ty, DL);
           CurArgInfo.Ty = EVT(NewVT).getTypeForEVT(Ctx);
           // Instead of an extend, we might have a vector type which needs

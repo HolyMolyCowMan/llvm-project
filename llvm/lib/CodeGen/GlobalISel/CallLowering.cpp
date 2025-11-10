@@ -1251,7 +1251,7 @@ LLT CallLowering::ValueHandler::getStackValueStoreType(
     const DataLayout &DL, const CCValAssign &VA, ISD::ArgFlagsTy Flags) const {
   const MVT ValVT = VA.getValVT();
   if (ValVT != MVT::iPTR) {
-    LLT ValTy(ValVT);
+    LLT ValTy(ValVT,  MIRBuilder.getMF().getTarget().Options.EnableGlobalISelExtendedLLT);
 
     // We lost the pointeriness going through CCValAssign, so try to restore it
     // based on the flags.
@@ -1296,8 +1296,8 @@ void CallLowering::ValueHandler::copyArgumentMemory(
 Register CallLowering::ValueHandler::extendRegister(Register ValReg,
                                                     const CCValAssign &VA,
                                                     unsigned MaxSizeBits) {
-  LLT LocTy{VA.getLocVT()};
-  LLT ValTy{VA.getValVT()};
+  LLT LocTy{VA.getLocVT(), MIRBuilder.getMF().getTarget().Options.EnableGlobalISelExtendedLLT};
+  LLT ValTy{VA.getValVT(), MIRBuilder.getMF().getTarget().Options.EnableGlobalISelExtendedLLT};
 
   if (LocTy.getSizeInBits() == ValTy.getSizeInBits())
     return ValReg;
@@ -1388,7 +1388,7 @@ static bool isCopyCompatibleType(LLT SrcTy, LLT DstTy) {
 void CallLowering::IncomingValueHandler::assignValueToReg(
     Register ValVReg, Register PhysReg, const CCValAssign &VA) {
   const MVT LocVT = VA.getLocVT();
-  const LLT LocTy(LocVT);
+  const LLT LocTy = getLLTForMVT(LocVT, MIRBuilder.getMF().getTarget().Options.EnableGlobalISelExtendedLLT);
   const LLT RegTy = MRI.getType(ValVReg);
 
   if (isCopyCompatibleType(RegTy, LocTy)) {
