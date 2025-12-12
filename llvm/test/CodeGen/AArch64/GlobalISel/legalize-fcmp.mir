@@ -37,13 +37,13 @@ body:             |
     ; CHECK-NEXT: %lhs:_(<8 x s16>) = COPY $q0
     ; CHECK-NEXT: %rhs:_(<8 x s16>) = COPY $q1
     ; CHECK-NEXT: [[UV:%[0-9]+]]:_(<4 x s16>), [[UV1:%[0-9]+]]:_(<4 x s16>) = G_UNMERGE_VALUES %lhs(<8 x s16>)
-    ; CHECK-NEXT: [[FPEXT:%[0-9]+]]:_(<4 x s32>) = G_FPEXT [[UV]](<4 x s16>)
-    ; CHECK-NEXT: [[FPEXT1:%[0-9]+]]:_(<4 x s32>) = G_FPEXT [[UV1]](<4 x s16>)
+    ; CHECK-NEXT: [[FPEXT:%[0-9]+]]:_(<4 x f32>) = G_FPEXT [[UV]](<4 x s16>)
+    ; CHECK-NEXT: [[FPEXT1:%[0-9]+]]:_(<4 x f32>) = G_FPEXT [[UV1]](<4 x s16>)
     ; CHECK-NEXT: [[UV2:%[0-9]+]]:_(<4 x s16>), [[UV3:%[0-9]+]]:_(<4 x s16>) = G_UNMERGE_VALUES %rhs(<8 x s16>)
-    ; CHECK-NEXT: [[FPEXT2:%[0-9]+]]:_(<4 x s32>) = G_FPEXT [[UV2]](<4 x s16>)
-    ; CHECK-NEXT: [[FPEXT3:%[0-9]+]]:_(<4 x s32>) = G_FPEXT [[UV3]](<4 x s16>)
-    ; CHECK-NEXT: [[FCMP:%[0-9]+]]:_(<4 x s32>) = G_FCMP floatpred(oeq), [[FPEXT]](<4 x s32>), [[FPEXT2]]
-    ; CHECK-NEXT: [[FCMP1:%[0-9]+]]:_(<4 x s32>) = G_FCMP floatpred(oeq), [[FPEXT1]](<4 x s32>), [[FPEXT3]]
+    ; CHECK-NEXT: [[FPEXT2:%[0-9]+]]:_(<4 x f32>) = G_FPEXT [[UV2]](<4 x s16>)
+    ; CHECK-NEXT: [[FPEXT3:%[0-9]+]]:_(<4 x f32>) = G_FPEXT [[UV3]](<4 x s16>)
+    ; CHECK-NEXT: [[FCMP:%[0-9]+]]:_(<4 x s32>) = G_FCMP floatpred(oeq), [[FPEXT]](<4 x f32>), [[FPEXT2]]
+    ; CHECK-NEXT: [[FCMP1:%[0-9]+]]:_(<4 x s32>) = G_FCMP floatpred(oeq), [[FPEXT1]](<4 x f32>), [[FPEXT3]]
     ; CHECK-NEXT: [[TRUNC:%[0-9]+]]:_(<4 x s16>) = G_TRUNC [[FCMP]](<4 x s32>)
     ; CHECK-NEXT: [[TRUNC1:%[0-9]+]]:_(<4 x s16>) = G_TRUNC [[FCMP1]](<4 x s32>)
     ; CHECK-NEXT: %fcmp:_(<8 x s16>) = G_CONCAT_VECTORS [[TRUNC]](<4 x s16>), [[TRUNC1]](<4 x s16>)
@@ -69,9 +69,9 @@ body:             |
     ; CHECK-NEXT: {{  $}}
     ; CHECK-NEXT: %lhs:_(<4 x s16>) = COPY $d0
     ; CHECK-NEXT: %rhs:_(<4 x s16>) = COPY $d1
-    ; CHECK-NEXT: [[FPEXT:%[0-9]+]]:_(<4 x s32>) = G_FPEXT %lhs(<4 x s16>)
-    ; CHECK-NEXT: [[FPEXT1:%[0-9]+]]:_(<4 x s32>) = G_FPEXT %rhs(<4 x s16>)
-    ; CHECK-NEXT: [[FCMP:%[0-9]+]]:_(<4 x s32>) = G_FCMP floatpred(oeq), [[FPEXT]](<4 x s32>), [[FPEXT1]]
+    ; CHECK-NEXT: [[FPEXT:%[0-9]+]]:_(<4 x f32>) = G_FPEXT %lhs(<4 x s16>)
+    ; CHECK-NEXT: [[FPEXT1:%[0-9]+]]:_(<4 x f32>) = G_FPEXT %rhs(<4 x s16>)
+    ; CHECK-NEXT: [[FCMP:%[0-9]+]]:_(<4 x s32>) = G_FCMP floatpred(oeq), [[FPEXT]](<4 x f32>), [[FPEXT1]]
     ; CHECK-NEXT: %fcmp:_(<4 x s16>) = G_TRUNC [[FCMP]](<4 x s32>)
     ; CHECK-NEXT: $d0 = COPY %fcmp(<4 x s16>)
     ; CHECK-NEXT: RET_ReallyLR implicit $d0

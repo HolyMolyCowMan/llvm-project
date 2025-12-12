@@ -15,7 +15,7 @@ def fconstant_to_constant : GICombineRule<
   (defs root:$root),
   (match (G_FCONSTANT $dst, $src):$root,
          [{ return matchFConstantToConstant(*${root}, MRI); }]),
-  (apply [{ applyFConstantToConstant(*${root}); }])>;
+  (apply [{ applyFConstantToConstant(*${root}, MRI); }])>;
 
 def icmp_redundant_trunc_matchdata : GIDefMatchData<"Register">;
 def icmp_redundant_trunc : GICombineRule<

@@ -3219,7 +3219,7 @@ bool IRTranslator::translateInsertElement(const User &U,
   if (!Idx)
     Idx = getOrCreateVReg(*U.getOperand(2));
   if (MRI->getType(Idx).getSizeInBits() != PreferredVecIdxWidth) {
-    const LLT VecIdxTy = LLT::scalar(PreferredVecIdxWidth);
+    const LLT VecIdxTy = MRI->getType(Idx).changeElementSize(PreferredVecIdxWidth);
     Idx = MIRBuilder.buildZExtOrTrunc(VecIdxTy, Idx).getReg(0);
   }
   MIRBuilder.buildInsertVectorElement(Res, Val, Elt, Idx);
@@ -3300,7 +3300,7 @@ bool IRTranslator::translateExtractElement(const User &U,
   if (!Idx)
     Idx = getOrCreateVReg(*U.getOperand(1));
   if (MRI->getType(Idx).getSizeInBits() != PreferredVecIdxWidth) {
-    const LLT VecIdxTy = LLT::scalar(PreferredVecIdxWidth);
+    const LLT VecIdxTy = MRI->getType(Idx).changeElementSize(PreferredVecIdxWidth);
     Idx = MIRBuilder.buildZExtOrTrunc(VecIdxTy, Idx).getReg(0);
   }
   MIRBuilder.buildExtractVectorElement(Res, Val, Idx);

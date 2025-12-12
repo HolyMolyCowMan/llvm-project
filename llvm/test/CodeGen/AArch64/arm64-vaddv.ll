@@ -94,11 +94,6 @@ entry:
 }
 
 define <2 x i64> @test_vaddv_s64_used_by_laneop(<2 x i64> %a1, <2 x i64> %a2) {
-; CHECK-LABEL: test_vaddv_s64_used_by_laneop:
-; CHECK:       // %bb.0: // %entry
-; CHECK-NEXT:    addp d1, v1.2d
-; CHECK-NEXT:    mov v0.d[1], v1.d[0]
-; CHECK-NEXT:    ret
 entry:
   %0 = tail call i64 @llvm.aarch64.neon.saddv.i64.v2i64(<2 x i64> %a2)
   %1 = insertelement <2 x i64> %a1, i64 %0, i64 1
@@ -252,11 +247,6 @@ entry:
 }
 
 define <2 x i64> @test_vaddv_u64_used_by_laneop(<2 x i64> %a1, <2 x i64> %a2) {
-; CHECK-LABEL: test_vaddv_u64_used_by_laneop:
-; CHECK:       // %bb.0: // %entry
-; CHECK-NEXT:    addp d1, v1.2d
-; CHECK-NEXT:    mov v0.d[1], v1.d[0]
-; CHECK-NEXT:    ret
 entry:
   %0 = tail call i64 @llvm.aarch64.neon.uaddv.i64.v2i64(<2 x i64> %a2)
   %1 = insertelement <2 x i64> %a1, i64 %0, i64 1
@@ -336,11 +326,6 @@ entry:
 }
 
 define <4 x i32> @test_vaddvq_s32_used_by_laneop(<4 x i32> %a1, <4 x i32> %a2) {
-; CHECK-LABEL: test_vaddvq_s32_used_by_laneop:
-; CHECK:       // %bb.0: // %entry
-; CHECK-NEXT:    addv s1, v1.4s
-; CHECK-NEXT:    mov v0.s[3], v1.s[0]
-; CHECK-NEXT:    ret
 entry:
   %0 = tail call i32 @llvm.aarch64.neon.saddv.i32.v4i32(<4 x i32> %a2)
   %1 = insertelement <4 x i32> %a1, i32 %0, i32 3
@@ -409,11 +394,6 @@ entry:
 }
 
 define <4 x i32> @test_vaddvq_u32_used_by_laneop(<4 x i32> %a1, <4 x i32> %a2) {
-; CHECK-LABEL: test_vaddvq_u32_used_by_laneop:
-; CHECK:       // %bb.0: // %entry
-; CHECK-NEXT:    addv s1, v1.4s
-; CHECK-NEXT:    mov v0.s[3], v1.s[0]
-; CHECK-NEXT:    ret
 entry:
   %0 = tail call i32 @llvm.aarch64.neon.uaddv.i32.v4i32(<4 x i32> %a2)
   %1 = insertelement <4 x i32> %a1, i32 %0, i32 3

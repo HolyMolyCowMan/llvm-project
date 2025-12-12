@@ -331,7 +331,7 @@ public:
 
   /// Returns the total size of the type. Must only be called on sized types.
   constexpr TypeSize getSizeInBits() const {
-    if (!isVector())
+    if (isPointer() || isScalar())
       return TypeSize::getFixed(getScalarSizeInBits());
     auto EC = getElementCount();
     return TypeSize(getScalarSizeInBits() * EC.getKnownMinValue(),
@@ -372,10 +372,12 @@ public:
     return isVector()
                ? LLT::vector(getElementCount(), getElementType().isInteger()
                                                     ? LLT::integer(NewEltSize)
-                                                    : getElementType().isFloat() ? LLT::floatingPoint(NewEltSize, getElementType().getFPVariant())
-                                                                : LLT::scalar(NewEltSize))
+                                                : getElementType().isFloat()
+                                                    ? LLT::floatIEEE(NewEltSize)
+                                                    : LLT::scalar(NewEltSize))
            : isInteger() ? LLT::integer(NewEltSize)
-           : isFloat() ? LLT::floatingPoint(NewEltSize, getFPVariant())
+           // TODO: Rework to work with bfloats, perhaps mention upstream?
+           : isFloat() ? LLT::floatIEEE(NewEltSize)
                        : LLT::scalar(NewEltSize);
   }
 
@@ -471,7 +473,7 @@ public:
   constexpr bool operator==(const LLT &RHS) const {
     if (isAnyScalar() || RHS.isAnyScalar()) {
       return isScalar() == RHS.isScalar() &&
-             getSizeInBits() == RHS.getSizeInBits();
+             getScalarSizeInBits() == RHS.getScalarSizeInBits();
     }
 
     if (isVector() && RHS.isVector())

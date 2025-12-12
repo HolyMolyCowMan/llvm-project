@@ -60,11 +60,12 @@ define [ 9 x double ] @array_9() {
 ;
 ; CHECK-GI-LABEL: array_9:
 ; CHECK-GI:       // %bb.0:
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8]
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8, #16]
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8, #32]
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8, #48]
-; CHECK-GI-NEXT:    str xzr, [x8, #64]
+; CHECK-GI-NEXT:    movi d0, #0000000000000000
+; CHECK-GI-NEXT:    stp d0, d0, [x8]
+; CHECK-GI-NEXT:    stp d0, d0, [x8, #16]
+; CHECK-GI-NEXT:    stp d0, d0, [x8, #32]
+; CHECK-GI-NEXT:    stp d0, d0, [x8, #48]
+; CHECK-GI-NEXT:    str d0, [x8, #64]
 ; CHECK-GI-NEXT:    ret
   ret [ 9 x double ] zeroinitializer
 }
@@ -249,11 +250,12 @@ define [ 5 x %T_STRUCT_SAMEM ] @array_of_struct_in_memory() {
 ;
 ; CHECK-GI-LABEL: array_of_struct_in_memory:
 ; CHECK-GI:       // %bb.0:
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8]
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8, #16]
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8, #32]
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8, #48]
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8, #64]
+; CHECK-GI-NEXT:    movi d0, #0000000000000000
+; CHECK-GI-NEXT:    stp d0, d0, [x8]
+; CHECK-GI-NEXT:    stp d0, d0, [x8, #16]
+; CHECK-GI-NEXT:    stp d0, d0, [x8, #32]
+; CHECK-GI-NEXT:    stp d0, d0, [x8, #48]
+; CHECK-GI-NEXT:    stp d0, d0, [x8, #64]
 ; CHECK-GI-NEXT:    ret
   ret [ 5 x %T_STRUCT_SAMEM ] zeroinitializer
 }
@@ -376,11 +378,12 @@ define [ 2 x %T_NESTED_STRUCT_SAMEM ] @array_of_struct_nested_same_field_types_2
 ;
 ; CHECK-GI-LABEL: array_of_struct_nested_same_field_types_2:
 ; CHECK-GI:       // %bb.0:
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8]
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8, #16]
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8, #32]
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8, #48]
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8, #64]
+; CHECK-GI-NEXT:    movi d0, #0000000000000000
+; CHECK-GI-NEXT:    stp d0, d0, [x8]
+; CHECK-GI-NEXT:    stp d0, d0, [x8, #16]
+; CHECK-GI-NEXT:    stp d0, d0, [x8, #32]
+; CHECK-GI-NEXT:    stp d0, d0, [x8, #48]
+; CHECK-GI-NEXT:    stp d0, d0, [x8, #64]
 ; CHECK-GI-NEXT:    ret
   ret [ 2 x %T_NESTED_STRUCT_SAMEM ] zeroinitializer
 }
@@ -511,11 +514,12 @@ define %T_IN_MEMORY @return_in_memory() {
 ;
 ; CHECK-GI-LABEL: return_in_memory:
 ; CHECK-GI:       // %bb.0:
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8]
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8, #16]
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8, #32]
-; CHECK-GI-NEXT:    stp xzr, xzr, [x8, #48]
-; CHECK-GI-NEXT:    str xzr, [x8, #64]
+; CHECK-GI-NEXT:    movi d0, #0000000000000000
+; CHECK-GI-NEXT:    stp d0, d0, [x8]
+; CHECK-GI-NEXT:    stp d0, d0, [x8, #16]
+; CHECK-GI-NEXT:    stp d0, d0, [x8, #32]
+; CHECK-GI-NEXT:    stp d0, d0, [x8, #48]
+; CHECK-GI-NEXT:    str d0, [x8, #64]
 ; CHECK-GI-NEXT:    ret
   ret %T_IN_MEMORY zeroinitializer
 }

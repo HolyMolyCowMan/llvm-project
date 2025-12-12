@@ -57,6 +57,7 @@
 #include "llvm/CodeGen/TargetInstrInfo.h"
 #include "llvm/CodeGen/TargetOpcodes.h"
 #include "llvm/CodeGen/ValueTypes.h"
+#include "llvm/CodeGenTypes/LowLevelType.h"
 #include "llvm/CodeGenTypes/MachineValueType.h"
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/Constants.h"
@@ -18389,13 +18390,13 @@ LLT AArch64TargetLowering::getOptimalMemOpLLT(
 
   if (CanUseNEON && Op.isMemset() && !IsSmallMemset &&
       AlignmentIsAcceptable(MVT::v2i64, Align(16)))
-    return LLT::fixed_vector(2, 64);
+    return LLT::fixed_vector(2, LLT::integer(64));
   if (CanUseFP && !IsSmallMemset && AlignmentIsAcceptable(MVT::f128, Align(16)))
-    return LLT::scalar(128);
+    return LLT::floatIEEE(128);
   if (Op.size() >= 8 && AlignmentIsAcceptable(MVT::i64, Align(8)))
-    return LLT::scalar(64);
+    return LLT::integer(64);
   if (Op.size() >= 4 && AlignmentIsAcceptable(MVT::i32, Align(4)))
-    return LLT::scalar(32);
+    return LLT::integer(32);
   return LLT();
 }
 

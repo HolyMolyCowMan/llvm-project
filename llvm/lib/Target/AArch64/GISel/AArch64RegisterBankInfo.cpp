@@ -365,8 +365,8 @@ void AArch64RegisterBankInfo::applyMappingImpl(
 
   switch (MI.getOpcode()) {
   case TargetOpcode::G_OR:
-  case TargetOpcode::G_BITCAST:
   case TargetOpcode::G_LOAD:
+  case TargetOpcode::G_BITCAST:
     // Those ID must match getInstrAlternativeMappings.
     assert((OpdMapper.getInstrMapping().getID() >= 1 &&
             OpdMapper.getInstrMapping().getID() <= 4) &&
@@ -375,7 +375,9 @@ void AArch64RegisterBankInfo::applyMappingImpl(
   case TargetOpcode::G_INSERT_VECTOR_ELT: {
     // Extend smaller gpr operands to 32 bit.
     Builder.setInsertPt(*MI.getParent(), MI.getIterator());
-    auto Ext = Builder.buildAnyExt(LLT::scalar(32), MI.getOperand(2).getReg());
+    LLT OperandType = MRI.getType(MI.getOperand(2).getReg());
+    auto Ext = Builder.buildAnyExt(OperandType.changeElementSize(32),
+                                   MI.getOperand(2).getReg());
     MRI.setRegBank(Ext.getReg(0), getRegBank(AArch64::GPRRegBankID));
     MI.getOperand(2).setReg(Ext.getReg(0));
     return applyDefaultMapping(OpdMapper);
@@ -553,6 +555,13 @@ bool AArch64RegisterBankInfo::onlyUsesFP(const MachineInstr &MI,
                                          const AArch64RegisterInfo &TRI,
                                          unsigned Depth) const {
   switch (MI.getOpcode()) {
+  case TargetOpcode::G_BITCAST: {
+    Register SrcReg = MI.getOperand(1).getReg();
+    if (const MachineInstr *Def = MRI.getVRegDef(SrcReg))
+      return onlyUsesFP(*Def, MRI, TRI, Depth + 1);
+    return false;
+  }
+
   case TargetOpcode::G_FPTOSI:
   case TargetOpcode::G_FPTOUI:
   case TargetOpcode::G_FPTOSI_SAT:
@@ -763,8 +772,12 @@ AArch64RegisterBankInfo::getInstrMapping(const MachineInstr &MI) const {
     LLT DstTy = MRI.getType(MI.getOperand(0).getReg());
     LLT SrcTy = MRI.getType(MI.getOperand(1).getReg());
     TypeSize Size = DstTy.getSizeInBits();
-    bool DstIsGPR = !DstTy.isVector() && DstTy.getSizeInBits() <= 64;
-    bool SrcIsGPR = !SrcTy.isVector() && SrcTy.getSizeInBits() <= 64;
+    bool DstIsGPR = !DstTy.isVector() && DstTy.getSizeInBits() <= 64 &&
+                    DstTy.getScalarType().isInteger() &&
+                    !(SrcTy.getSizeInBits() <= 16);
+    bool SrcIsGPR = !SrcTy.isVector() && SrcTy.getSizeInBits() <= 64 &&
+                    SrcTy.getScalarType().isInteger() &&
+                    !(SrcTy.getSizeInBits() <= 16);
     const RegisterBank &DstRB =
         DstIsGPR ? AArch64::GPRRegBank : AArch64::FPRRegBank;
     const RegisterBank &SrcRB =
@@ -1074,7 +1087,7 @@ AArch64RegisterBankInfo::getInstrMapping(const MachineInstr &MI) const {
     if (getRegBank(MI.getOperand(2).getReg(), MRI, TRI) == &AArch64::FPRRegBank)
       OpRegBankIdx[2] = PMI_FirstFPR;
     else {
-      // If the type is i8/i16, and the regank will be GPR, then we change the
+      // If the type is i8/i16, and the regbank will be GPR, then we change the
       // type to i32 in applyMappingImpl.
       LLT Ty = MRI.getType(MI.getOperand(2).getReg());
       if (Ty.getSizeInBits() == 8 || Ty.getSizeInBits() == 16) {

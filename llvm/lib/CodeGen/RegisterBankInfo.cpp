@@ -477,7 +477,7 @@ void RegisterBankInfo::applyDefaultMapping(const OperandsMapper &OpdMapper) {
     // Check if the types match and if not, fix that.
     LLT OrigTy = MRI.getType(OrigReg);
     LLT NewTy = MRI.getType(NewReg);
-    if (OrigTy != NewTy) {
+    if (OrigTy.getUniqueRAWLLTData() != NewTy.getUniqueRAWLLTData()) {
       // The default mapping is not supposed to change the size of
       // the storage. However, right now we don't necessarily bump all
       // the types to storage size. For instance, we can consider

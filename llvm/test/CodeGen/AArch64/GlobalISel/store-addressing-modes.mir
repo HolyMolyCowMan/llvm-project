@@ -124,10 +124,11 @@ body:             |
     ; CHECK-LABEL: name: strsrox
     ; CHECK: liveins: $x0, $x1, $s2
     ; CHECK-NEXT: {{  $}}
-    ; CHECK-NEXT: [[COPY:%[0-9]+]]:gpr64sp = COPY $x0
+    ; CHECK-NEXT: [[COPY:%[0-9]+]]:gpr64 = COPY $x0
     ; CHECK-NEXT: [[COPY1:%[0-9]+]]:gpr64 = COPY $x1
+    ; CHECK-NEXT: %ptr:gpr64common = ADDXrr [[COPY]], [[COPY1]]
     ; CHECK-NEXT: [[COPY2:%[0-9]+]]:fpr32 = COPY $s2
-    ; CHECK-NEXT: STRSroX [[COPY2]], [[COPY]], [[COPY1]], 0, 0 :: (store (s32) into %ir.addr)
+    ; CHECK-NEXT: STRSui [[COPY2]], %ptr, 0 :: (store (s32) into %ir.addr)
     %0:gpr(p0) = COPY $x0
     %1:gpr(s64) = COPY $x1
     %ptr:gpr(p0) = G_PTR_ADD %0, %1
@@ -147,10 +148,11 @@ body:             |
     ; CHECK-LABEL: name: strhrox
     ; CHECK: liveins: $x0, $x1, $h0
     ; CHECK-NEXT: {{  $}}
-    ; CHECK-NEXT: [[COPY:%[0-9]+]]:gpr64sp = COPY $x0
+    ; CHECK-NEXT: [[COPY:%[0-9]+]]:gpr64 = COPY $x0
     ; CHECK-NEXT: [[COPY1:%[0-9]+]]:gpr64 = COPY $x1
+    ; CHECK-NEXT: %ptr:gpr64common = ADDXrr [[COPY]], [[COPY1]]
     ; CHECK-NEXT: [[COPY2:%[0-9]+]]:fpr16 = COPY $h0
-    ; CHECK-NEXT: STRHroX [[COPY2]], [[COPY]], [[COPY1]], 0, 0 :: (store (s16) into %ir.addr)
+    ; CHECK-NEXT: STRHui [[COPY2]], %ptr, 0 :: (store (s16) into %ir.addr)
     %0:gpr(p0) = COPY $x0
     %1:gpr(s64) = COPY $x1
     %ptr:gpr(p0) = G_PTR_ADD %0, %1
@@ -287,9 +289,10 @@ body:             |
     ; CHECK: liveins: $x0, $x1, $x2, $q0
     ; CHECK-NEXT: {{  $}}
     ; CHECK-NEXT: [[COPY:%[0-9]+]]:gpr64 = COPY $x0
-    ; CHECK-NEXT: [[COPY1:%[0-9]+]]:gpr64sp = COPY $x1
+    ; CHECK-NEXT: [[COPY1:%[0-9]+]]:gpr64 = COPY $x1
+    ; CHECK-NEXT: %ptr:gpr64common = ADDXrs [[COPY1]], [[COPY]], 4
     ; CHECK-NEXT: [[COPY2:%[0-9]+]]:fpr128 = COPY $q0
-    ; CHECK-NEXT: STRQroX [[COPY2]], [[COPY1]], [[COPY]], 0, 1 :: (store (s128) into %ir.addr)
+    ; CHECK-NEXT: STRQui [[COPY2]], %ptr, 0 :: (store (s128) into %ir.addr)
     %0:gpr(s64) = COPY $x0
     %1:gpr(s64) = G_CONSTANT i64 4
     %2:gpr(s64) = G_SHL %0, %1(s64)
@@ -308,24 +311,15 @@ machineFunctionInfo: {}
 body:             |
   bb.0:
     liveins: $x0, $x1, $x2, $q0
-    ; CHECK-FAST-LABEL: name: shl_slow_4_more_than_one_use
-    ; CHECK-FAST: liveins: $x0, $x1, $x2, $q0
-    ; CHECK-FAST-NEXT: {{  $}}
-    ; CHECK-FAST-NEXT: [[COPY:%[0-9]+]]:gpr64 = COPY $x0
-    ; CHECK-FAST-NEXT: [[COPY1:%[0-9]+]]:gpr64sp = COPY $x1
-    ; CHECK-FAST-NEXT: [[COPY2:%[0-9]+]]:fpr128 = COPY $q0
-    ; CHECK-FAST-NEXT: STRQroX [[COPY2]], [[COPY1]], [[COPY]], 0, 1 :: (store (s128) into %ir.addr)
-    ; CHECK-FAST-NEXT: STRQroX [[COPY2]], [[COPY1]], [[COPY]], 0, 1 :: (store (s128) into %ir.addr)
-    ;
-    ; CHECK-SLOW-LABEL: name: shl_slow_4_more_than_one_use
-    ; CHECK-SLOW: liveins: $x0, $x1, $x2, $q0
-    ; CHECK-SLOW-NEXT: {{  $}}
-    ; CHECK-SLOW-NEXT: [[COPY:%[0-9]+]]:gpr64 = COPY $x0
-    ; CHECK-SLOW-NEXT: [[COPY1:%[0-9]+]]:gpr64 = COPY $x1
-    ; CHECK-SLOW-NEXT: %ptr:gpr64common = ADDXrs [[COPY1]], [[COPY]], 4
-    ; CHECK-SLOW-NEXT: [[COPY2:%[0-9]+]]:fpr128 = COPY $q0
-    ; CHECK-SLOW-NEXT: STRQui [[COPY2]], %ptr, 0 :: (store (s128) into %ir.addr)
-    ; CHECK-SLOW-NEXT: STRQui [[COPY2]], %ptr, 0 :: (store (s128) into %ir.addr)
+    ; CHECK-LABEL: name: shl_slow_4_more_than_one_use
+    ; CHECK: liveins: $x0, $x1, $x2, $q0
+    ; CHECK-NEXT: {{  $}}
+    ; CHECK-NEXT: [[COPY:%[0-9]+]]:gpr64 = COPY $x0
+    ; CHECK-NEXT: [[COPY1:%[0-9]+]]:gpr64 = COPY $x1
+    ; CHECK-NEXT: %ptr:gpr64common = ADDXrs [[COPY1]], [[COPY]], 4
+    ; CHECK-NEXT: [[COPY2:%[0-9]+]]:fpr128 = COPY $q0
+    ; CHECK-NEXT: STRQui [[COPY2]], %ptr, 0 :: (store (s128) into %ir.addr)
+    ; CHECK-NEXT: STRQui [[COPY2]], %ptr, 0 :: (store (s128) into %ir.addr)
     %0:gpr(s64) = COPY $x0
     %1:gpr(s64) = G_CONSTANT i64 4
     %2:gpr(s64) = G_SHL %0, %1(s64)

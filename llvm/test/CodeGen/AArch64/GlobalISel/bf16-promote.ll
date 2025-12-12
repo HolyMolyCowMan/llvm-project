@@ -41,11 +41,9 @@ define <2 x bfloat> @v2bf16_fadd(<2 x bfloat> %a, <2 x bfloat> %b) {
 ; SCALAR-GIS-NEXT:    shll v0.4s, v0.4h, #16
 ; SCALAR-GIS-NEXT:    shll v1.4s, v1.4h, #16
 ; SCALAR-GIS-NEXT:    fadd v0.2s, v0.2s, v1.2s
-; SCALAR-GIS-NEXT:    mov s1, v0.s[1]
-; SCALAR-GIS-NEXT:    bfcvt h0, s0
-; SCALAR-GIS-NEXT:    bfcvt h1, s1
-; SCALAR-GIS-NEXT:    mov v0.h[1], v1.h[0]
-; SCALAR-GIS-NEXT:    // kill: def $d0 killed $d0 killed $q0
+; SCALAR-GIS-NEXT:    mov v1.s[0], v0.s[0]
+; SCALAR-GIS-NEXT:    mov v1.s[1], v0.s[1]
+; SCALAR-GIS-NEXT:    bfcvtn v0.4h, v1.4s
 ; SCALAR-GIS-NEXT:    ret
 entry:
   %res = fadd <2 x bfloat> %a, %b

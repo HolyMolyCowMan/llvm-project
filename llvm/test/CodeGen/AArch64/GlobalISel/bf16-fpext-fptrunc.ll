@@ -46,11 +46,9 @@ define <2 x bfloat> @v2bf16_fptrunc_float(<2 x float> %a) {
 ; SCALAR-GIS-LABEL: v2bf16_fptrunc_float:
 ; SCALAR-GIS:       // %bb.0: // %entry
 ; SCALAR-GIS-NEXT:    // kill: def $d0 killed $d0 def $q0
-; SCALAR-GIS-NEXT:    mov s1, v0.s[1]
-; SCALAR-GIS-NEXT:    bfcvt h0, s0
-; SCALAR-GIS-NEXT:    bfcvt h1, s1
-; SCALAR-GIS-NEXT:    mov v0.h[1], v1.h[0]
-; SCALAR-GIS-NEXT:    // kill: def $d0 killed $d0 killed $q0
+; SCALAR-GIS-NEXT:    mov v1.s[0], v0.s[0]
+; SCALAR-GIS-NEXT:    mov v1.s[1], v0.s[1]
+; SCALAR-GIS-NEXT:    bfcvtn v0.4h, v1.4s
 ; SCALAR-GIS-NEXT:    ret
 entry:
   %res = fptrunc <2 x float> %a to <2 x bfloat>
@@ -58,22 +56,10 @@ entry:
 }
 
 define <3 x bfloat> @v3bf16_fptrunc_float(<3 x float> %a) {
-; SCALAR-SD-LABEL: v3bf16_fptrunc_float:
-; SCALAR-SD:       // %bb.0: // %entry
-; SCALAR-SD-NEXT:    bfcvtn v0.4h, v0.4s
-; SCALAR-SD-NEXT:    ret
-;
-; SCALAR-GIS-LABEL: v3bf16_fptrunc_float:
-; SCALAR-GIS:       // %bb.0: // %entry
-; SCALAR-GIS-NEXT:    mov s1, v0.s[1]
-; SCALAR-GIS-NEXT:    mov s2, v0.s[2]
-; SCALAR-GIS-NEXT:    bfcvt h0, s0
-; SCALAR-GIS-NEXT:    bfcvt h1, s1
-; SCALAR-GIS-NEXT:    bfcvt h2, s2
-; SCALAR-GIS-NEXT:    mov v0.h[1], v1.h[0]
-; SCALAR-GIS-NEXT:    mov v0.h[2], v2.h[0]
-; SCALAR-GIS-NEXT:    // kill: def $d0 killed $d0 killed $q0
-; SCALAR-GIS-NEXT:    ret
+; SCALAR-LABEL: v3bf16_fptrunc_float:
+; SCALAR:       // %bb.0: // %entry
+; SCALAR-NEXT:    bfcvtn v0.4h, v0.4s
+; SCALAR-NEXT:    ret
 entry:
   %res = fptrunc <3 x float> %a to <3 x bfloat>
   ret <3 x bfloat> %res
@@ -150,13 +136,9 @@ define <4 x double> @v4bf16_fpext_double(<4 x bfloat> %a) {
 ;
 ; SCALAR-GIS-LABEL: v4bf16_fpext_double:
 ; SCALAR-GIS:       // %bb.0: // %entry
-; SCALAR-GIS-NEXT:    // kill: def $d0 killed $d0 def $q0
-; SCALAR-GIS-NEXT:    mov v1.h[0], v0.h[2]
-; SCALAR-GIS-NEXT:    mov v1.h[1], v0.h[3]
-; SCALAR-GIS-NEXT:    shll v0.4s, v0.4h, #16
-; SCALAR-GIS-NEXT:    fcvtl v0.2d, v0.2s
-; SCALAR-GIS-NEXT:    shll v1.4s, v1.4h, #16
-; SCALAR-GIS-NEXT:    fcvtl v1.2d, v1.2s
+; SCALAR-GIS-NEXT:    shll v1.4s, v0.4h, #16
+; SCALAR-GIS-NEXT:    fcvtl v0.2d, v1.2s
+; SCALAR-GIS-NEXT:    fcvtl2 v1.2d, v1.4s
 ; SCALAR-GIS-NEXT:    ret
 entry:
   %res = fpext <4 x bfloat> %a to <4 x double>

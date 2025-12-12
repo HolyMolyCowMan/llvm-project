@@ -69,10 +69,6 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
   const LLT v4bf16 = LLT::fixed_vector(4, bf16);
   const LLT v8bf16 = LLT::fixed_vector(8, bf16);
 
-  const LLT fp8 = LLT::floatingPoint(8, LLT::FPVariant::IEEE_FLOAT);
-  const LLT v8fp8 = LLT::fixed_vector(8, fp8);
-  const LLT v16fp8 = LLT::fixed_vector(16, fp8);
-
   const LLT fp16 = LLT::float16();
   const LLT v4fp16 = LLT::fixed_vector(4, fp16);
   const LLT v8fp16 = LLT::fixed_vector(8, fp16);
@@ -82,6 +78,8 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
   const LLT v4fp32 = LLT::fixed_vector(4, fp32);
 
   const LLT fp64 = LLT::float64();
+  const LLT v2fp64 = LLT::fixed_vector(2, fp64);
+
   const LLT fp128 = LLT::float128();
 
   std::initializer_list<LLT> PackedVectorAllTypeList = {/* Begin 128bit types */
@@ -428,10 +426,10 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
       {G_FADD, G_FSUB, G_FMUL, G_FDIV, G_FMA, G_FSQRT, G_FMAXNUM, G_FMINNUM,
        G_FMAXIMUM, G_FMINIMUM, G_FCEIL, G_FFLOOR, G_FRINT, G_FNEARBYINT,
        G_INTRINSIC_TRUNC, G_INTRINSIC_ROUND, G_INTRINSIC_ROUNDEVEN})
-      .legalFor({fp32, fp64, fp128, s32, s64, v2s32, v4s32, v2s64})
-      .legalFor(HasFP16, {fp16, s16, v4s16, v8s16})
+      .legalFor({fp32, fp64, v2fp32, v4fp32, v2fp64})
       .convertBF16(HasBF16)
-      .libcallFor({s128})
+      .legalFor(HasFP16, {fp16, s16, v4s16, v8s16})
+      .libcallFor({fp128})
       .scalarizeIf(scalarOrEltWiderThan(0, 64), 0)
       .minScalarOrElt(0, MinFPScalar)
       .clampNumElements(0, v4s16, v8s16)
@@ -440,19 +438,19 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
       .moreElementsToNextPow2(0);
 
   getActionDefinitionsBuilder({G_FABS, G_FNEG})
-      .legalFor({s32, s64, v2s32, v4s32, v2s64})
-      .legalFor(HasFP16, {s16, v4s16, v8s16})
+      .legalFor({fp32, fp64, v2fp32, v4fp32, v2fp64})
+      .legalFor(HasFP16, {fp16, v4fp16, v8fp16})
       .scalarizeIf(scalarOrEltWiderThan(0, 64), 0)
       .lowerIf(scalarOrEltWiderThan(0, 64))
       .clampNumElements(0, v4s16, v8s16)
       .clampNumElements(0, v2s32, v4s32)
       .clampNumElements(0, v2s64, v2s64)
       .moreElementsToNextPow2(0)
-      .lowerFor({s16, v4s16, v8s16});
+      .lowerFor({fp16, v4fp16, v8fp16});
 
   getActionDefinitionsBuilder(G_FREM)
-      .libcallFor({s32, s64, s128})
-      .minScalar(0, s32)
+      .libcallFor({fp32, fp64, fp128})
+      .minScalar(0, fp32)
       .scalarize(0);
 
   getActionDefinitionsBuilder({G_INTRINSIC_LRINT, G_INTRINSIC_LLRINT})
@@ -467,11 +465,11 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
       // We need a call for these, so we always need to scalarize.
       .scalarize(0)
       // Regardless of FP16 support, widen 16-bit elements to 32-bits.
-      .minScalar(0, s32)
-      .libcallFor({s32, s64, s128});
+      .minScalar(0, fp32)
+      .libcallFor({fp32, fp64, fp128});
   getActionDefinitionsBuilder({G_FPOWI, G_FLDEXP})
       .scalarize(0)
-      .minScalar(0, s32)
+      .minScalar(0, fp32)
       .libcallFor({{s32, s32}, {s64, s32}, {s128, s32}});
 
   // TODO: Libcall support for s128.
@@ -746,6 +744,7 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
                  {v2s64, v2s64}})
       .legalFor(HasFP16, {{s32, s16}, {v4s16, v4s16}, {v8s16, v8s16}})
       .widenScalarOrEltToNextPow2(1)
+      .convertBF16(1, fp32)
       .clampScalar(0, s32, s32)
       .minScalarOrElt(1, MinFPScalar)
       .scalarizeIf(scalarOrEltWiderThan(1, 64), 1)
@@ -848,8 +847,11 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
       .scalarize(0);
 
   getActionDefinitionsBuilder(G_FPEXT)
-      .legalFor(
-          {{s32, s16}, {s64, s16}, {s64, s32}, {v4s32, v4s16}, {v2s64, v2s32}})
+      .legalFor({{fp32, fp16},
+                 {fp64, fp16},
+                 {fp64, fp32},
+                 {v4fp32, v4fp16},
+                 {v2fp64, v2fp32}})
       .legalFor(HasBF16, {{fp32, bf16}, {v4fp32, v4bf16}})
       .libcallFor({{s128, s64}, {s128, s32}, {s128, s16}})
       .moreElementsToNextPow2(0)
@@ -861,7 +863,7 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
                    SrcTy.getScalarSizeInBits() == 16 &&
                    DstTy.getScalarSizeInBits() == 64;
           },
-          changeElementTo(1, s32))
+          changeElementSizeTo(1, s32))
       .clampNumElements(0, v4s32, v4s32)
       .clampNumElements(0, v2s64, v2s64)
       // bf16 -> fp32 -> fp64
@@ -1053,6 +1055,7 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
   // Casts for 32 and 64-bit width type are just copies.
   // Same for 128-bit width type, except they are on the FPR bank.
   getActionDefinitionsBuilder(G_BITCAST)
+      .legalForCartesianProduct({s16})
       // Keeping 32-bit instructions legal to prevent regression in some tests
       .legalForCartesianProduct({s32, v2s16, v4s8})
       .legalForCartesianProduct({s64, v8s8, v4s16, v2s32})
@@ -1071,6 +1074,7 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
       .clampNumElements(0, v8s8, v16s8)
       .clampNumElements(0, v4s16, v8s16)
       .clampNumElements(0, v2s32, v4s32)
+      .clampMaxNumElements(0, s64, 2)
       .lower();
 
   getActionDefinitionsBuilder(G_VASTART).legalFor({p0});
@@ -1272,7 +1276,6 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST)
 
   getActionDefinitionsBuilder(G_CONCAT_VECTORS)
       .legalFor({{v16s8, v8s8}, {v8s16, v4s16}, {v4s32, v2s32}})
-      .legalFor({{v16fp8, v8fp8}, {v8fp16, v4fp16}, {v4fp32, v2fp32}})
       .legalFor(HasBF16, {{v8bf16, v4bf16}})
       .bitcastIf(
           [=](const LegalityQuery &Query) {
@@ -1812,20 +1815,21 @@ bool AArch64LegalizerInfo::legalizeIntrinsic(LegalizerHelper &Helper,
     Register DstReg = MI.getOperand(0).getReg();
     Register SrcReg = MI.getOperand(2).getReg();
     LLT DstTy = MRI.getType(DstReg);
+    LLT DstTyScalar = DstTy.getScalarType();
 
     LLT MidTy, ExtTy;
     if (DstTy.isScalar() && DstTy.getScalarSizeInBits() <= 32) {
-      MidTy = LLT::fixed_vector(4, 32);
-      ExtTy = LLT::scalar(32);
+      ExtTy = DstTyScalar.changeElementSize(32);
+      MidTy = LLT::fixed_vector(4, ExtTy);
     } else {
-      MidTy = LLT::fixed_vector(2, 64);
-      ExtTy = LLT::scalar(64);
+      ExtTy = DstTy.changeElementSize(64);
+      MidTy = LLT::fixed_vector(2, ExtTy);
     }
 
     Register MidReg =
         MIB.buildInstr(Opc, {MidTy}, {SrcReg})->getOperand(0).getReg();
     Register ZeroReg =
-        MIB.buildConstant(LLT::scalar(64), 0)->getOperand(0).getReg();
+        MIB.buildConstant(DstTyScalar.changeElementSize(64), 0)->getOperand(0).getReg();
     Register ExtReg = MIB.buildInstr(AArch64::G_EXTRACT_VECTOR_ELT, {ExtTy},
                                      {MidReg, ZeroReg})
                           .getReg(0);
@@ -2133,7 +2137,7 @@ bool AArch64LegalizerInfo::legalizeCTPOP(MachineInstr &MI,
          "Expected src and dst to have the same type!");
 
   if (ST->hasCSSC() && Ty.isScalar() && Size == 128) {
-    LLT s64 = LLT::scalar(64);
+    LLT s64 = Ty.changeElementSize(64);
 
     auto Split = MIRBuilder.buildUnmerge(s64, Val);
     auto CTPOP1 = MIRBuilder.buildCTPOP(s64, Split->getOperand(0));
@@ -2156,11 +2160,12 @@ bool AArch64LegalizerInfo::legalizeCTPOP(MachineInstr &MI,
   // Pre-conditioning: widen Val up to the nearest vector type.
   // s32,s64,v4s16,v2s32 -> v8i8
   // v8s16,v4s32,v2s64 -> v16i8
-  LLT VTy = Size == 128 ? LLT::fixed_vector(16, 8) : LLT::fixed_vector(8, 8);
+  LLT ScalarTy = Ty.getScalarType();
+  LLT VTy = Size == 128 ? LLT::fixed_vector(16, ScalarTy.changeElementSize(8)) : LLT::fixed_vector(8, ScalarTy.changeElementSize(8));
   if (Ty.isScalar()) {
     assert((Size == 32 || Size == 64 || Size == 128) && "Expected only 32, 64, or 128 bit scalars!");
     if (Size == 32) {
-      Val = MIRBuilder.buildZExt(LLT::scalar(64), Val).getReg(0);
+      Val = MIRBuilder.buildZExt(ScalarTy.changeElementSize(64), Val).getReg(0);
     }
   }
   Val = MIRBuilder.buildBitcast(VTy, Val).getReg(0);
@@ -2169,15 +2174,14 @@ bool AArch64LegalizerInfo::legalizeCTPOP(MachineInstr &MI,
   auto CTPOP = MIRBuilder.buildCTPOP(VTy, Val);
 
   // Sum across lanes.
-
   if (ST->hasDotProd() && Ty.isVector() && Ty.getNumElements() >= 2 &&
       Ty.getScalarSizeInBits() != 16) {
-    LLT Dt = Ty == LLT::fixed_vector(2, 64) ? LLT::fixed_vector(4, 32) : Ty;
+    LLT Dt = Ty == LLT::fixed_vector(2, ScalarTy.changeElementSize(64)) ? LLT::fixed_vector(4, ScalarTy.changeElementSize(32)) : Ty;
     auto Zeros = MIRBuilder.buildConstant(Dt, 0);
     auto Ones = MIRBuilder.buildConstant(VTy, 1);
     MachineInstrBuilder Sum;
 
-    if (Ty == LLT::fixed_vector(2, 64)) {
+    if (Ty == LLT::fixed_vector(2, ScalarTy.changeElementSize(64))) {
       auto UDOT =
           MIRBuilder.buildInstr(AArch64::G_UDOT, {Dt}, {Zeros, Ones, CTPOP});
       Sum = MIRBuilder.buildInstr(AArch64::G_UADDLP, {Ty}, {UDOT});
@@ -2199,26 +2203,26 @@ bool AArch64LegalizerInfo::legalizeCTPOP(MachineInstr &MI,
   SmallVector<LLT> HAddTys;
   if (Ty.isScalar()) {
     Opc = Intrinsic::aarch64_neon_uaddlv;
-    HAddTys.push_back(LLT::scalar(32));
-  } else if (Ty == LLT::fixed_vector(8, 16)) {
+    HAddTys.push_back(ScalarTy.changeElementSize(32));
+  } else if (Ty == LLT::fixed_vector(8, ScalarTy.changeElementSize(16))) {
     Opc = Intrinsic::aarch64_neon_uaddlp;
-    HAddTys.push_back(LLT::fixed_vector(8, 16));
-  } else if (Ty == LLT::fixed_vector(4, 32)) {
+    HAddTys.push_back(LLT::fixed_vector(8, ScalarTy.changeElementSize(16)));
+  } else if (Ty == LLT::fixed_vector(4, ScalarTy.changeElementSize(32))) {
     Opc = Intrinsic::aarch64_neon_uaddlp;
-    HAddTys.push_back(LLT::fixed_vector(8, 16));
-    HAddTys.push_back(LLT::fixed_vector(4, 32));
-  } else if (Ty == LLT::fixed_vector(2, 64)) {
+    HAddTys.push_back(LLT::fixed_vector(8, ScalarTy.changeElementSize(16)));
+    HAddTys.push_back(LLT::fixed_vector(4, ScalarTy.changeElementSize(32)));
+  } else if (Ty == LLT::fixed_vector(2, ScalarTy.changeElementSize(64))) {
     Opc = Intrinsic::aarch64_neon_uaddlp;
-    HAddTys.push_back(LLT::fixed_vector(8, 16));
-    HAddTys.push_back(LLT::fixed_vector(4, 32));
-    HAddTys.push_back(LLT::fixed_vector(2, 64));
-  } else if (Ty == LLT::fixed_vector(4, 16)) {
+    HAddTys.push_back(LLT::fixed_vector(8, ScalarTy.changeElementSize(16)));
+    HAddTys.push_back(LLT::fixed_vector(4, ScalarTy.changeElementSize(32)));
+    HAddTys.push_back(LLT::fixed_vector(2, ScalarTy.changeElementSize(64)));
+  } else if (Ty == LLT::fixed_vector(4, ScalarTy.changeElementSize(16))) {
     Opc = Intrinsic::aarch64_neon_uaddlp;
-    HAddTys.push_back(LLT::fixed_vector(4, 16));
-  } else if (Ty == LLT::fixed_vector(2, 32)) {
+    HAddTys.push_back(LLT::fixed_vector(4, ScalarTy.changeElementSize(16)));
+  } else if (Ty == LLT::fixed_vector(2, ScalarTy.changeElementSize(32))) {
     Opc = Intrinsic::aarch64_neon_uaddlp;
-    HAddTys.push_back(LLT::fixed_vector(4, 16));
-    HAddTys.push_back(LLT::fixed_vector(2, 32));
+    HAddTys.push_back(LLT::fixed_vector(4, ScalarTy.changeElementSize(16)));
+    HAddTys.push_back(LLT::fixed_vector(2, ScalarTy.changeElementSize(32)));
   } else
     llvm_unreachable("unexpected vector shape");
   MachineInstrBuilder UADD;
@@ -2239,12 +2243,12 @@ bool AArch64LegalizerInfo::legalizeCTPOP(MachineInstr &MI,
 bool AArch64LegalizerInfo::legalizeAtomicCmpxchg128(
     MachineInstr &MI, MachineRegisterInfo &MRI, LegalizerHelper &Helper) const {
   MachineIRBuilder &MIRBuilder = Helper.MIRBuilder;
-  LLT s64 = LLT::scalar(64);
+  LLT i64 = LLT::integer(64);
   auto Addr = MI.getOperand(1).getReg();
-  auto DesiredI = MIRBuilder.buildUnmerge({s64, s64}, MI.getOperand(2));
-  auto NewI = MIRBuilder.buildUnmerge({s64, s64}, MI.getOperand(3));
-  auto DstLo = MRI.createGenericVirtualRegister(s64);
-  auto DstHi = MRI.createGenericVirtualRegister(s64);
+  auto DesiredI = MIRBuilder.buildUnmerge({i64, i64}, MI.getOperand(2));
+  auto NewI = MIRBuilder.buildUnmerge({i64, i64}, MI.getOperand(3));
+  auto DstLo = MRI.createGenericVirtualRegister(i64);
+  auto DstHi = MRI.createGenericVirtualRegister(i64);
 
   MachineInstrBuilder CAS;
   if (ST->hasLSE()) {

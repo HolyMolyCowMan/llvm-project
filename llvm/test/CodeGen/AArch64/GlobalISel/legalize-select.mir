@@ -368,11 +368,13 @@ body:             |
     ; CHECK-NEXT: [[C1:%[0-9]+]]:_(s64) = G_CONSTANT i64 0
     ; CHECK-NEXT: [[IVEC:%[0-9]+]]:_(<2 x s64>) = G_INSERT_VECTOR_ELT [[DEF]], [[SEXT]](s64), [[C1]](s64)
     ; CHECK-NEXT: [[SHUF:%[0-9]+]]:_(<2 x s64>) = G_SHUFFLE_VECTOR [[IVEC]](<2 x s64>), [[DEF]], shufflemask(0, 0)
+    ; CHECK-NEXT: [[BITCAST:%[0-9]+]]:_(<2 x i64>) = G_BITCAST [[PTRTOINT]](<2 x s64>)
+    ; CHECK-NEXT: [[BITCAST1:%[0-9]+]]:_(<2 x i64>) = G_BITCAST [[PTRTOINT1]](<2 x s64>)
     ; CHECK-NEXT: [[C2:%[0-9]+]]:_(s64) = G_CONSTANT i64 -1
     ; CHECK-NEXT: [[BUILD_VECTOR1:%[0-9]+]]:_(<2 x s64>) = G_BUILD_VECTOR [[C2]](s64), [[C2]](s64)
     ; CHECK-NEXT: [[XOR:%[0-9]+]]:_(<2 x s64>) = G_XOR [[SHUF]], [[BUILD_VECTOR1]]
-    ; CHECK-NEXT: [[AND:%[0-9]+]]:_(<2 x s64>) = G_AND [[PTRTOINT]], [[SHUF]]
-    ; CHECK-NEXT: [[AND1:%[0-9]+]]:_(<2 x s64>) = G_AND [[PTRTOINT1]], [[XOR]]
+    ; CHECK-NEXT: [[AND:%[0-9]+]]:_(<2 x s64>) = G_AND [[BITCAST]], [[SHUF]]
+    ; CHECK-NEXT: [[AND1:%[0-9]+]]:_(<2 x s64>) = G_AND [[BITCAST1]], [[XOR]]
     ; CHECK-NEXT: [[OR:%[0-9]+]]:_(<2 x s64>) = G_OR [[AND]], [[AND1]]
     ; CHECK-NEXT: [[INTTOPTR:%[0-9]+]]:_(<2 x p0>) = G_INTTOPTR [[OR]](<2 x s64>)
     ; CHECK-NEXT: $q0 = COPY [[INTTOPTR]](<2 x p0>)
